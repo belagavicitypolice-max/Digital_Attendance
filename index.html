@@ -1,0 +1,2690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Belagavi Police Attendance System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --police-red: #8B0000;
+            --police-red-light: #B22222;
+            --police-red-dark: #660000;
+            --police-blue: #00008B;
+            --police-gray: #2C2C2C;
+            --police-light: #F5F5F5;
+            --police-gold: #FFD700;
+            --success-green: #006400;
+            --warning-orange: #FF8C00;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Helvetica Neue', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: white;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Mobile-first responsive design */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+        }
+        
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            padding: 20px;
+            background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="%231a1a1a"/><path d="M0,50 L100,50 M50,0 L50,100" stroke="%238B0000" stroke-width="1" stroke-opacity="0.3"/></svg>');
+            background-size: cover;
+            background-attachment: fixed;
+        }
+        
+        .login-box {
+            background: rgba(44, 44, 44, 0.95);
+            padding: 30px 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(139, 0, 0, 0.5);
+            border: 3px solid var(--police-red);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 25px 20px;
+                margin: 10px;
+            }
+        }
+        
+        .logo {
+            margin-bottom: 25px;
+        }
+        
+        .logo h1 {
+            color: var(--police-red);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .logo h2 {
+            color: var(--police-gold);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+        
+        .login-input {
+            width: 100%;
+            padding: 16px 20px;
+            margin: 12px 0;
+            border: 2px solid var(--police-red);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .login-input:focus {
+            outline: none;
+            border-color: var(--police-gold);
+            background: rgba(255,255,255,0.15);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+        }
+        
+        /* Fix for iOS input styling */
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        select,
+        textarea {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            border-radius: 12px;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 17px;
+            background: linear-gradient(135deg, var(--police-red), var(--police-red-light));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .login-btn:hover {
+            background: linear-gradient(135deg, var(--police-red-dark), var(--police-red));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 0, 0, 0.4);
+        }
+        
+        .role-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .role-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px;
+            background: rgba(139, 0, 0, 0.2);
+            border: 2px solid var(--police-red);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .role-btn.active {
+            background: var(--police-red);
+            font-weight: bold;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .system-container {
+            display: none;
+            height: 100vh;
+            height: -webkit-fill-available;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--police-gray), var(--police-red-dark));
+            padding: 18px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid var(--police-gold);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 15px 20px;
+                flex-wrap: wrap;
+            }
+        }
+        
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .header-logo img {
+            height: 55px;
+            width: auto;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+        }
+        
+        .header-logo h1 {
+            color: var(--police-gold);
+            font-size: 1.7rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        @media (max-width: 480px) {
+            .header-logo h1 {
+                font-size: 1.4rem;
+            }
+        }
+        
+        .logout-btn {
+            background: linear-gradient(135deg, var(--police-red), var(--police-red-light));
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        .logout-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .dashboard {
+            display: flex;
+            height: calc(100vh - 80px);
+            height: calc(100dvh - 80px);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                flex-direction: column;
+            }
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, var(--police-gray) 0%, #1a1a1a 100%);
+            padding: 25px 0;
+            border-right: 3px solid var(--police-red);
+            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 3px solid var(--police-red);
+                padding: 15px 0;
+            }
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+        }
+        
+        .sidebar-menu li {
+            margin-bottom: 8px;
+            padding: 0 20px;
+        }
+        
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: rgba(139, 0, 0, 0.15);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+            touch-action: manipulation;
+        }
+        
+        .sidebar-menu a:active {
+            transform: scale(0.98);
+        }
+        
+        .sidebar-menu a.active {
+            background: linear-gradient(90deg, rgba(139, 0, 0, 0.4), rgba(139, 0, 0, 0.2));
+            border-left: 4px solid var(--police-gold);
+            box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+        }
+        
+        .sidebar-menu i {
+            margin-right: 15px;
+            width: 22px;
+            font-size: 1.2rem;
+            color: var(--police-gold);
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(44, 44, 44, 0.9) 0%, rgba(26, 26, 26, 0.9) 100%);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px;
+                height: calc(100vh - 200px);
+            }
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .page-title {
+            color: var(--police-gold);
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--police-red);
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        
+        @media (max-width: 480px) {
+            .page-title {
+                font-size: 1.6rem;
+                margin-bottom: 20px;
+            }
+        }
+        
+        .form-container {
+            background: rgba(44, 44, 44, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid var(--police-red);
+            max-width: 900px;
+            margin: 0 auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+        }
+        
+        @media (max-width: 768px) {
+            .form-container {
+                padding: 25px 20px;
+                margin: 0;
+            }
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            color: var(--police-gold);
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.08);
+            border: 2px solid var(--police-red);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--police-gold);
+            background: rgba(255,255,255,0.12);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.2);
+        }
+        
+        .location-section {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.15), rgba(139, 0, 0, 0.05));
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px dashed var(--police-red);
+            margin-top: 10px;
+        }
+        
+        .location-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .location-btn {
+            background: linear-gradient(135deg, var(--police-red), var(--police-red-light));
+            color: white;
+            border: none;
+            padding: 17px 30px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+            margin: 0 auto;
+            min-width: 280px;
+            max-width: 100%;
+            touch-action: manipulation;
+        }
+        
+        .location-btn:active {
+            transform: scale(0.98);
+        }
+        
+        @media (max-width: 480px) {
+            .location-btn {
+                min-width: 100%;
+                padding: 16px;
+            }
+        }
+        
+        .map-container {
+            height: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 20px;
+            border: 3px solid var(--police-red);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        #map, #userMap {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .submit-btn {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, var(--success-green), #008000);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            letter-spacing: 0.5px;
+            touch-action: manipulation;
+        }
+        
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .submit-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+        
+        .status-message {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            display: none;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            animation: slideIn 0.4s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .success {
+            background: linear-gradient(135deg, rgba(0, 128, 0, 0.2), rgba(0, 100, 0, 0.1));
+            border: 2px solid #00FF00;
+            color: #90EE90;
+        }
+        
+        .error {
+            background: linear-gradient(135deg, rgba(139, 0, 0, 0.2), rgba(100, 0, 0, 0.1));
+            border: 2px solid var(--police-red);
+            color: #FFB6C1;
+        }
+        
+        .info {
+            background: linear-gradient(135deg, rgba(0, 0, 139, 0.2), rgba(0, 0, 100, 0.1));
+            border: 2px solid var(--police-blue);
+            color: #ADD8E6;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--police-gold);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Mobile-specific optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .login-btn:hover,
+            .logout-btn:hover,
+            .location-btn:hover,
+            .submit-btn:hover,
+            .sidebar-menu a:hover {
+                transform: none;
+            }
+            
+            .login-btn:active,
+            .logout-btn:active,
+            .location-btn:active,
+            .submit-btn:active,
+            .sidebar-menu a:active {
+                transform: scale(0.95);
+            }
+            
+            /* Larger touch targets for mobile */
+            .login-input,
+            .form-input,
+            .form-select {
+                padding: 18px;
+                font-size: 16px;
+            }
+            
+            .sidebar-menu a {
+                padding: 20px;
+                margin: 5px 0;
+            }
+            
+            /* Prevent zoom on input focus */
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+        
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            .login-container {
+                min-height: -webkit-fill-available;
+            }
+            
+            .system-container {
+                height: -webkit-fill-available;
+            }
+            
+            .dashboard {
+                height: -webkit-fill-available;
+            }
+        }
+        
+        /* Android Chrome specific fixes */
+        @supports not (-webkit-touch-callout: none) {
+            .login-container {
+                min-height: 100vh;
+            }
+        }
+        
+        /* Improved offline support */
+        .offline-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: var(--warning-orange);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: none;
+            z-index: 2000;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        /* Data table responsive */
+        .data-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 15px;
+            border: 2px solid var(--police-red);
+            margin: 20px 0;
+        }
+        
+        .data-table {
+            width: 100%;
+            min-width: 800px;
+            background: rgba(44, 44, 44, 0.95);
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            background: linear-gradient(135deg, var(--police-red), var(--police-red-dark));
+            padding: 18px;
+            text-align: left;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-bottom: 3px solid var(--police-gold);
+            position: sticky;
+            top: 0;
+        }
+        
+        .data-table td {
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(139, 0, 0, 0.2);
+            transition: background 0.3s;
+        }
+        
+        /* Mobile-friendly time display */
+        .time-display {
+            background: rgba(0,0,0,0.3);
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 2px solid var(--police-gold);
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--police-gold);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            margin-left: 15px;
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 768px) {
+            .time-display {
+                display: none;
+            }
+        }
+        
+        /* Shift time display fix */
+        .shift-time {
+            color: var(--police-gold);
+            font-size: 0.9rem;
+            margin-left: 8px;
+            font-weight: normal;
+            opacity: 0.8;
+        }
+        
+        /* Google Sheets connection status */
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            display: none;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .connection-status.connected {
+            background: rgba(0, 100, 0, 0.3);
+            border: 2px solid #00FF00;
+            color: #90EE90;
+        }
+        
+        .connection-status.disconnected {
+            background: rgba(139, 0, 0, 0.3);
+            border: 2px solid var(--police-red);
+            color: #FFB6C1;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Enhanced error modal */
+        .error-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .error-modal-content {
+            background: linear-gradient(135deg, var(--police-gray), #1a1a1a);
+            padding: 40px 30px;
+            border-radius: 20px;
+            border: 4px solid var(--police-red);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+        }
+        
+        .error-modal-icon {
+            font-size: 4rem;
+            color: var(--police-red);
+            margin-bottom: 20px;
+        }
+        
+        .error-modal-title {
+            color: var(--police-gold);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+        
+        .error-modal-message {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .error-modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .error-modal-btn {
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 140px;
+        }
+        
+        .error-modal-btn.retry {
+            background: linear-gradient(135deg, var(--police-red), var(--police-red-light));
+            color: white;
+        }
+        
+        .error-modal-btn.retry:active {
+            transform: scale(0.95);
+        }
+        
+        .error-modal-btn.cancel {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 2px solid var(--police-red);
+        }
+        
+        /* Progress indicator */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(139, 0, 0, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--police-red), var(--police-gold));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        /* Retry mechanism indicator */
+        .retry-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--warning-orange);
+            margin-top: 10px;
+        }
+        
+        /* Enhanced form validation */
+        .form-input.invalid,
+        .form-select.invalid {
+            border-color: #FF0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+        
+        .validation-error {
+            color: #FF6B6B;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        /* Print styles */
+        @media print {
+            .login-container,
+            .header,
+            .sidebar,
+            .logout-btn,
+            .location-btn,
+            .submit-btn {
+                display: none !important;
+            }
+            
+            .main-content {
+                padding: 0;
+                background: white;
+                color: black;
+            }
+            
+            .form-container {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --police-red: #B22222;
+                --police-gold: #FFD700;
+                --police-blue: #0000FF;
+            }
+            
+            .login-input,
+            .form-input,
+            .form-select {
+                border-width: 3px;
+            }
+        }
+        
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Offline Indicator -->
+    <div id="offlineIndicator" class="offline-indicator">
+        <i class="fas fa-wifi-slash"></i> You are offline
+    </div>
+    
+    <!-- Connection Status -->
+    <div id="connectionStatus" class="connection-status">
+        <i class="fas fa-sync-alt"></i> Connecting...
+    </div>
+    
+    <!-- Error Modal -->
+    <div id="errorModal" class="error-modal">
+        <div class="error-modal-content">
+            <div class="error-modal-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 class="error-modal-title">Connection Error</h2>
+            <p class="error-modal-message" id="errorModalMessage">
+                Unable to connect to Google Sheets. Please check your internet connection and try again.
+            </p>
+            <div class="progress-container" id="errorProgress">
+                <div class="progress-bar" id="errorProgressBar"></div>
+            </div>
+            <div class="error-modal-actions">
+                <button class="error-modal-btn retry" onclick="retryConnection()">
+                    <i class="fas fa-redo"></i> Retry
+                </button>
+                <button class="error-modal-btn cancel" onclick="closeErrorModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-box">
+            <div class="logo">
+                <h1><i class="fas fa-shield-alt"></i> BPAS</h1>
+                <h2>Belagavi Police Attendance System</h2>
+                <p style="color: #ccc; margin-top: 10px; font-size: 0.95rem;">
+                    <i class="fas fa-database"></i> Integrated with Google Sheets
+                </p>
+            </div>
+            
+            <div class="role-selector">
+                <button class="role-btn active" onclick="selectRole('user')">
+                    <i class="fas fa-user"></i> Police Personnel
+                </button>
+                <button class="role-btn" onclick="selectRole('admin')">
+                    <i class="fas fa-user-shield"></i> Admin
+                </button>
+            </div>
+            
+            <div id="userLogin" class="login-form">
+                <h3 style="color: var(--police-gold); margin-bottom: 20px; font-size: 1.4rem;">Police Personnel Login</h3>
+                <input type="text" class="login-input" id="userID" placeholder="Enter your Police ID" autocomplete="off">
+                <button class="login-btn" onclick="loginUser()">
+                    <i class="fas fa-sign-in-alt"></i> Mark Attendance
+                </button>
+                <p style="margin-top: 20px; color: #ccc; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i> Enter your Police ID to mark attendance
+                </p>
+                
+                <div class="sheet-info-box" style="margin-top: 25px; background: rgba(0,100,0,0.2); padding: 15px; border-radius: 10px; border: 2px solid #00FF00;">
+                    <i class="fas fa-google" style="color: #00FF00;"></i>
+                    <div class="sheet-info-content" style="text-align: left; margin-left: 15px;">
+                        <h3 style="color: #90EE90; margin-bottom: 5px; font-size: 1.1rem;">Google Sheets Integrated</h3>
+                        <p style="color: #ccc; font-size: 0.9rem;">All data is automatically saved to Google Sheets</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="adminLogin" class="login-form" style="display: none;">
+                <h3 style="color: var(--police-gold); margin-bottom: 20px; font-size: 1.4rem;">Admin Login</h3>
+                <input type="text" class="login-input" id="adminUsername" placeholder="Username" autocomplete="username">
+                <input type="password" class="login-input" id="adminPassword" placeholder="Password" autocomplete="current-password">
+                <button class="login-btn" onclick="loginAdmin()">
+                    <i class="fas fa-sign-in-alt"></i> Login to Admin Panel
+                </button>
+                
+                <div class="sheet-info-box" style="margin-top: 25px; background: rgba(0,100,0,0.2); padding: 15px; border-radius: 10px; border: 2px solid #00FF00;">
+                    <i class="fas fa-cogs" style="color: #00FF00;"></i>
+                    <div class="sheet-info-content" style="text-align: left; margin-left: 15px;">
+                        <h3 style="color: #90EE90; margin-bottom: 5px; font-size: 1.1rem;">Automatic Integration</h3>
+                        <p style="color: #ccc; font-size: 0.9rem;">System is pre-configured with Google Sheets</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Dashboard -->
+    <div id="userDashboard" class="system-container">
+        <div class="header">
+            <div class="header-logo">
+                <div style="width: 55px; height: 55px; background: var(--police-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--police-gold);"></i>
+                </div>
+                <div style="min-width: 0;">
+                    <h1>Belagavi Police Attendance</h1>
+                    <span style="font-size: 0.9rem; color: #ccc; display: block; overflow: hidden; text-overflow: ellipsis;">Digital Attendance System</span>
+                </div>
+            </div>
+            
+            <div class="time-display">
+                <i class="fas fa-clock"></i> <span id="currentTime">00:00:00</span>
+            </div>
+            
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        
+        <div class="dashboard">
+            <div class="main-content">
+                <h2 class="page-title">Mark Your Attendance</h2>
+                
+                <div class="sheet-info-box" style="background: rgba(0,100,0,0.2); padding: 15px; border-radius: 10px; border: 2px solid #00FF00; margin-bottom: 20px;">
+                    <i class="fas fa-database" style="color: #00FF00;"></i>
+                    <div class="sheet-info-content" style="text-align: left; margin-left: 15px;">
+                        <h3 style="color: #90EE90; margin-bottom: 5px; font-size: 1.1rem;">Data Storage</h3>
+                        <p style="color: #ccc; font-size: 0.9rem;">Your attendance will be automatically saved to Google Sheets</p>
+                    </div>
+                </div>
+                
+                <div class="form-container">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-id-card"></i> Police ID *</label>
+                            <input type="text" class="form-input" id="policeId" placeholder="Enter your Police ID" autocomplete="off">
+                            <div id="lastAttendanceInfo" class="last-attendance" style="display: none; background: rgba(255,215,0,0.1); padding: 15px; border-radius: 10px; margin-top: 15px; border-left: 4px solid var(--police-gold);">
+                                <h4 style="color: var(--police-gold); margin-bottom: 10px; font-size: 1.1rem;"><i class="fas fa-history"></i> Last Attendance</h4>
+                                <p id="lastAttendanceText" style="color: #ccc; margin-bottom: 5px;"></p>
+                                <p id="nextEligibleText" style="color: var(--police-gold); font-weight: bold; font-size: 0.95rem;"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-user-tag"></i> Rank *</label>
+                            <select class="form-select" id="rank">
+                                <option value="">Select Rank</option>
+                                <option value="HG">Home Guard (HG)</option>
+                                <option value="PC">Police Constable (PC)</option>
+                                <option value="HC">Head Constable (HC)</option>
+                                <option value="ASI">Assistant Sub-Inspector (ASI)</option>
+                                <option value="PSI">Police Sub-Inspector (PSI)</option>
+                                <option value="PI/CPI">Police Inspector/Chief PI (PI/CPI)</option>
+                                <option value="ACP/DSP">Assistant Commissioner/Deputy SP (ACP/DSP)</option>
+                                <option value="SP/DCP">Superintendent/Deputy CP (SP/DCP)</option>
+                                <option value="CP">Commissioner of Police (CP)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-user"></i> Full Name *</label>
+                            <input type="text" class="form-input" id="fullName" placeholder="Enter your full name" autocomplete="name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-building"></i> Police Station *</label>
+                            <select class="form-select" id="policeStation">
+                                <option value="">Select Police Station</option>
+                                <option value="APMC Police Station">APMC Police Station</option>
+                                <option value="Malamaruti Police Station">Malamaruti Police Station</option>
+                                <option value="Market Police Station">Market Police Station</option>
+                                <option value="Shahapur Police Station">Shahapur Police Station</option>
+                                <option value="Kadebazar Police Station">Kadebazar Police Station</option>
+                                <option value="Camp Police Station">Camp Police Station</option>
+                                <option value="Tilakawadi Police Station">Tilakawadi Police Station</option>
+                                <option value="Udyambag Police Station">Udyambag Police Station</option>
+                                <option value="Rural Police Station">Rural Police Station</option>
+                                <option value="Kakati Police Station">Kakati Police Station</option>
+                                <option value="Marihal Police Station">Marihal Police Station</option>
+                                <option value="Bagewadi Police Station">Bagewadi Police Station</option>
+                                <option value="Traffic North Police Station">Traffic North Police Station</option>
+                                <option value="Traffic South Police Station">Traffic South Police Station</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-map-marker-alt"></i> Sector *</label>
+                            <select class="form-select" id="sector">
+                                <option value="">Select Sector</option>
+                                <option value="1">Sector 1</option>
+                                <option value="2">Sector 2</option>
+                                <option value="3">Sector 3</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-clock"></i> Shift *</label>
+                            <select class="form-select" id="shift">
+                                <option value="">Select Shift</option>
+                                <option value="A">Shift A <span class="shift-time">(6:00 AM - 2:00 PM)</span></option>
+                                <option value="B">Shift B <span class="shift-time">(2:00 PM - 10:00 PM)</span></option>
+                                <option value="C">Shift C <span class="shift-time">(10:00 PM - 6:00 AM)</span></option>
+                                <option value="Others">Others <span class="shift-time">(Custom Timing)</span></option>
+                            </select>
+                        </div>
+                        
+                        <div class="location-section">
+                            <label class="form-label"><i class="fas fa-map-pin"></i> Location Capture</label>
+                            <p style="color: #ccc; margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem;">
+                                Click below to capture your current location. A beep sound will confirm successful capture.
+                            </p>
+                            
+                            <button class="location-btn" id="captureLocationBtn" onclick="captureLocation()">
+                                <i class="fas fa-crosshairs"></i> Capture Current Location
+                            </button>
+                            
+                            <div class="location-info" id="locationInfo" style="display: none;">
+                                <div>
+                                    <label class="form-label">Latitude</label>
+                                    <input type="text" class="form-input" id="latitude" readonly style="background: rgba(0,100,0,0.2);">
+                                </div>
+                                <div>
+                                    <label class="form-label">Longitude</label>
+                                    <input type="text" class="form-input" id="longitude" readonly style="background: rgba(0,100,0,0.2);">
+                                </div>
+                                <div>
+                                    <label class="form-label">Accuracy</label>
+                                    <input type="text" class="form-input" id="accuracy" readonly style="background: rgba(0,100,0,0.2);">
+                                </div>
+                                <div>
+                                    <label class="form-label">Address</label>
+                                    <input type="text" class="form-input" id="address" readonly style="background: rgba(0,100,0,0.2);">
+                                </div>
+                            </div>
+                            
+                            <div class="map-container" id="mapContainer" style="display: none;">
+                                <div id="userMap"></div>
+                            </div>
+                        </div>
+                        
+                        <button class="submit-btn" id="submitAttendanceBtn" onclick="submitAttendance()" disabled>
+                            <i class="fas fa-check-circle"></i> Submit Attendance
+                        </button>
+                    </div>
+                    
+                    <div id="attendanceStatus" class="status-message"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="system-container">
+        <div class="header">
+            <div class="header-logo">
+                <div style="width: 55px; height: 55px; background: var(--police-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-shield-alt" style="font-size: 2rem; color: var(--police-gold);"></i>
+                </div>
+                <div style="min-width: 0;">
+                    <h1>BPAS Admin Dashboard</h1>
+                    <span style="font-size: 0.9rem; color: #ccc; display: block; overflow: hidden; text-overflow: ellipsis;">Belagavi Police Attendance System</span>
+                </div>
+            </div>
+            
+            <div class="time-display">
+                <i class="fas fa-clock"></i> <span id="adminCurrentTime">00:00:00</span>
+            </div>
+            
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        
+        <div class="dashboard">
+            <div class="sidebar">
+                <ul class="sidebar-menu">
+                    <li><a href="#" class="active" onclick="showTab('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="#" onclick="showTab('attendanceData')"><i class="fas fa-database"></i> Attendance Data</a></li>
+                    <li><a href="#" onclick="showTab('addPersonnel')"><i class="fas fa-user-plus"></i> Add Personnel</a></li>
+                    <li><a href="#" onclick="showTab('trackerMap')"><i class="fas fa-map"></i> Tracker Map</a></li>
+                    <li><a href="#" onclick="showTab('analytics')"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+                    <li><a href="#" onclick="showTab('reports')"><i class="fas fa-file-export"></i> Reports</a></li>
+                </ul>
+            </div>
+            
+            <div class="main-content">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-content active">
+                    <h2 class="page-title">Admin Dashboard</h2>
+                    
+                    <div class="sheet-info-box" style="background: rgba(0,100,0,0.2); padding: 15px; border-radius: 10px; border: 2px solid #00FF00; margin-bottom: 20px;">
+                        <i class="fas fa-google" style="color: #00FF00;"></i>
+                        <div class="sheet-info-content" style="text-align: left; margin-left: 15px;">
+                            <h3 style="color: #90EE90; margin-bottom: 5px; font-size: 1.1rem;">Google Sheets Integration</h3>
+                            <p style="color: #ccc; font-size: 0.9rem;">System is automatically connected to Google Sheets</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                        <div class="stat-card" style="background: rgba(44,44,44,0.9); padding: 25px; border-radius: 15px; border: 2px solid var(--police-red); text-align: center;">
+                            <div class="stat-number" id="totalAttendance" style="font-size: 3rem; color: var(--police-gold); font-weight: bold; margin-bottom: 10px;">0</div>
+                            <div class="stat-label" style="color: #ccc; font-size: 1.1rem;">Total Records</div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(44,44,44,0.9); padding: 25px; border-radius: 15px; border: 2px solid var(--police-red); text-align: center;">
+                            <div class="stat-number" id="totalPersonnel" style="font-size: 3rem; color: var(--police-gold); font-weight: bold; margin-bottom: 10px;">0</div>
+                            <div class="stat-label" style="color: #ccc; font-size: 1.1rem;">Personnel</div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(44,44,44,0.9); padding: 25px; border-radius: 15px; border: 2px solid var(--police-red); text-align: center;">
+                            <div class="stat-number" id="presentToday" style="font-size: 3rem; color: var(--police-gold); font-weight: bold; margin-bottom: 10px;">0</div>
+                            <div class="stat-label" style="color: #ccc; font-size: 1.1rem;">Present Today</div>
+                        </div>
+                        <div class="stat-card" style="background: rgba(44,44,44,0.9); padding: 25px; border-radius: 15px; border: 2px solid var(--police-red); text-align: center;">
+                            <div class="stat-number" id="activeStations" style="font-size: 3rem; color: var(--police-gold); font-weight: bold; margin-bottom: 10px;">0</div>
+                            <div class="stat-label" style="color: #ccc; font-size: 1.1rem;">Active Stations</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container" style="background: rgba(44,44,44,0.9); padding: 25px; border-radius: 20px; border: 3px solid var(--police-red); margin-bottom: 30px; height: 350px;">
+                        <h3 style="color: var(--police-gold); margin-bottom: 20px; font-size: 1.3rem;">
+                            <i class="fas fa-chart-line"></i> Attendance Trend
+                        </h3>
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Attendance Data Tab -->
+                <div id="attendanceData" class="tab-content">
+                    <h2 class="page-title">Attendance Records</h2>
+                    
+                    <div class="filter-section" style="background: rgba(44,44,44,0.9); padding: 25px; border-radius: 20px; border: 3px solid var(--police-red); margin-bottom: 30px;">
+                        <h3 style="color: var(--police-gold); margin-bottom: 20px; font-size: 1.3rem;">
+                            <i class="fas fa-filter"></i> Filter Records
+                        </h3>
+                        <div class="filter-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                            <div>
+                                <label class="form-label">Date Range</label>
+                                <input type="date" class="form-input" id="filterDateFrom">
+                                <input type="date" class="form-input" id="filterDateTo" style="margin-top: 10px;">
+                            </div>
+                            <div>
+                                <label class="form-label">Police Station</label>
+                                <select class="form-select" id="filterStation">
+                                    <option value="">All Stations</option>
+                                    <option value="APMC Police Station">APMC Police Station</option>
+                                    <option value="Malamaruti Police Station">Malamaruti Police Station</option>
+                                    <option value="Market Police Station">Market Police Station</option>
+                                    <option value="Shahapur Police Station">Shahapur Police Station</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Sector</label>
+                                <select class="form-select" id="filterSector">
+                                    <option value="">All Sectors</option>
+                                    <option value="1">Sector 1</option>
+                                    <option value="2">Sector 2</option>
+                                    <option value="3">Sector 3</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Shift</label>
+                                <select class="form-select" id="filterShift">
+                                    <option value="">All Shifts</option>
+                                    <option value="A">Shift A (6:00 AM - 2:00 PM)</option>
+                                    <option value="B">Shift B (2:00 PM - 10:00 PM)</option>
+                                    <option value="C">Shift C (10:00 PM - 6:00 AM)</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                            <button class="filter-btn" onclick="filterRecords()" style="background: linear-gradient(135deg, var(--police-blue), #0000CD); color: white; border: none; padding: 14px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <button class="export-btn" onclick="exportFilteredData()" style="background: linear-gradient(135deg, #006400, #008000); color: white; border: none; padding: 14px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-file-export"></i> Export Data
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="data-table-container">
+                        <table class="data-table" id="attendanceTable">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Police ID</th>
+                                    <th>Name</th>
+                                    <th>Rank</th>
+                                    <th>Station</th>
+                                    <th>Sector</th>
+                                    <th>Shift</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTableBody">
+                                <tr><td colspan="7" style="text-align: center; padding: 40px;"><span class="loading"></span> Loading attendance data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Add Personnel Tab -->
+                <div id="addPersonnel" class="tab-content">
+                    <h2 class="page-title">Add New Personnel</h2>
+                    
+                    <div class="form-container">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-id-card"></i> Police ID *</label>
+                                <input type="text" class="form-input" id="newPoliceId" placeholder="Enter unique Police ID">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-user-tag"></i> Rank *</label>
+                                <select class="form-select" id="newRank">
+                                    <option value="">Select Rank</option>
+                                    <option value="HG">Home Guard (HG)</option>
+                                    <option value="PC">Police Constable (PC)</option>
+                                    <option value="HC">Head Constable (HC)</option>
+                                    <option value="ASI">Assistant Sub-Inspector (ASI)</option>
+                                    <option value="PSI">Police Sub-Inspector (PSI)</option>
+                                    <option value="PI/CPI">Police Inspector/Chief PI (PI/CPI)</option>
+                                    <option value="ACP/DSP">Assistant Commissioner/Deputy SP (ACP/DSP)</option>
+                                    <option value="SP/DCP">Superintendent/Deputy CP (SP/DCP)</option>
+                                    <option value="CP">Commissioner of Police (CP)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-user"></i> Full Name *</label>
+                                <input type="text" class="form-input" id="newFullName" placeholder="Enter full name">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-building"></i> Police Station *</label>
+                                <select class="form-select" id="newPoliceStation">
+                                    <option value="">Select Police Station</option>
+                                    <option value="APMC Police Station">APMC Police Station</option>
+                                    <option value="Malamaruti Police Station">Malamaruti Police Station</option>
+                                    <option value="Market Police Station">Market Police Station</option>
+                                    <option value="Shahapur Police Station">Shahapur Police Station</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-map-marker-alt"></i> Sector *</label>
+                                <select class="form-select" id="newSector">
+                                    <option value="">Select Sector</option>
+                                    <option value="1">Sector 1</option>
+                                    <option value="2">Sector 2</option>
+                                    <option value="3">Sector 3</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-clock"></i> Default Shift *</label>
+                                <select class="form-select" id="newShift">
+                                    <option value="">Select Shift</option>
+                                    <option value="A">Shift A <span class="shift-time">(6:00 AM - 2:00 PM)</span></option>
+                                    <option value="B">Shift B <span class="shift-time">(2:00 PM - 10:00 PM)</span></option>
+                                    <option value="C">Shift C <span class="shift-time">(10:00 PM - 6:00 AM)</span></option>
+                                    <option value="Others">Others <span class="shift-time">(Custom Timing)</span></option>
+                                </select>
+                            </div>
+                            
+                            <button class="submit-btn" onclick="addNewPersonnel()">
+                                <i class="fas fa-user-plus"></i> Add Personnel
+                            </button>
+                        </div>
+                        
+                        <div id="personnelStatus" class="status-message"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="successModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; padding: 20px;">
+        <div class="modal-content" style="background: linear-gradient(135deg, var(--police-gray), #1a1a1a); padding: 40px 30px; border-radius: 20px; border: 4px solid var(--police-gold); max-width: 500px; width: 100%; text-align: center;">
+            <div class="modal-icon" style="font-size: 5rem; color: var(--police-gold); margin-bottom: 25px;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="modal-title" style="color: var(--police-gold); font-size: 2rem; margin-bottom: 25px;">Success!</h2>
+            <p class="modal-message" id="successMessage" style="color: white; font-size: 1.2rem; margin-bottom: 30px; line-height: 1.6;">
+                Your attendance has been successfully recorded.
+            </p>
+            <button class="modal-btn" onclick="closeSuccessModal()" style="background: linear-gradient(135deg, var(--police-red), var(--police-red-light)); color: white; border: none; padding: 17px 35px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; font-weight: bold;">
+                <i class="fas fa-check"></i> OK
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ============================
+        // CONFIGURATION
+        // ============================
+        const CONFIG = {
+            // Google Apps Script URLs (multiple fallbacks)
+            SCRIPT_URLS: [
+                'https://script.google.com/macros/s/AKfycbzH6i-ARU36Z1O6kJPuBzL15iFYjNNoIA2i8lqVMUvJ_c11fCymEXLbQdMX33TveWfE/exec',
+                'https://script.google.com/macros/s/AKfycbyRQwjfsFekb3lIYH1IRlnXZKlVlLqUPsmmAHPVJw/exec'
+            ],
+            
+            // Google Sheet ID
+            SHEET_ID: '1MA0MWmlTuWmDzsOsw7v0owf9hNlfCdfjlFoT4ZzbOJI',
+            
+            // Admin credentials
+            ADMIN_USERNAME: 'Belagavi',
+            ADMIN_PASSWORD: 'A@abc7676',
+            
+            // App settings
+            MAX_RETRIES: 3,
+            RETRY_DELAY: 2000, // 2 seconds
+            CONNECTION_TIMEOUT: 10000, // 10 seconds
+            OFFLINE_STORAGE_KEY: 'police_attendance_offline',
+            
+            // Shift timings
+            SHIFT_TIMINGS: {
+                'A': '6:00 AM - 2:00 PM',
+                'B': '2:00 PM - 10:00 PM',
+                'C': '10:00 PM - 6:00 AM',
+                'Others': 'Custom Timing'
+            }
+        };
+        
+        // ============================
+        // GLOBAL VARIABLES
+        // ============================
+        let currentUser = null;
+        let currentRole = 'user';
+        let userLocation = null;
+        let userMap = null;
+        let adminMap = null;
+        let trackerMap = null;
+        let attendanceChart = null;
+        let stationChart = null;
+        let shiftChart = null;
+        let rankChart = null;
+        let currentScriptUrlIndex = 0;
+        let isOnline = navigator.onLine;
+        let retryCount = 0;
+        let connectionChecker = null;
+        
+        // ============================
+        // INITIALIZATION
+        // ============================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up service worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+            }
+            
+            // Initialize app
+            initApp();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Start connection monitoring
+            startConnectionMonitoring();
+        });
+        
+        function initApp() {
+            // Update date time
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // Check for existing login
+            const savedRole = localStorage.getItem('currentRole');
+            if (savedRole) {
+                currentRole = savedRole;
+                if (savedRole === 'user') {
+                    showSystem('userDashboard');
+                } else if (savedRole === 'admin') {
+                    showSystem('adminDashboard');
+                    loadAdminData();
+                }
+            }
+            
+            // Check for offline data
+            checkOfflineData();
+            
+            // Update online status
+            updateOnlineStatus();
+        }
+        
+        function setupEventListeners() {
+            // Network status events
+            window.addEventListener('online', handleOnline);
+            window.addEventListener('offline', handleOffline);
+            
+            // Prevent form submission on Enter key in inputs
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                    }
+                });
+            });
+            
+            // Auto-fill ID when user types
+            const policeIdInput = document.getElementById('policeId');
+            if (policeIdInput) {
+                policeIdInput.addEventListener('input', debounce(async function() {
+                    const id = this.value.trim();
+                    if (id.length >= 3) {
+                        await checkAndFillPersonnelData(id);
+                    }
+                }, 500));
+            }
+        }
+        
+        // ============================
+        // UTILITY FUNCTIONS
+        // ============================
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        function getCurrentScriptUrl() {
+            return CONFIG.SCRIPT_URLS[currentScriptUrlIndex];
+        }
+        
+        function rotateScriptUrl() {
+            currentScriptUrlIndex = (currentScriptUrlIndex + 1) % CONFIG.SCRIPT_URLS.length;
+            console.log(`Rotated to script URL ${currentScriptUrlIndex + 1}`);
+        }
+        
+        // ============================
+        // NETWORK & CONNECTION HANDLING
+        // ============================
+        function startConnectionMonitoring() {
+            if (connectionChecker) clearInterval(connectionChecker);
+            connectionChecker = setInterval(checkConnection, 30000); // Check every 30 seconds
+        }
+        
+        async function checkConnection() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(getCurrentScriptUrl() + '?action=ping', {
+                    method: 'GET',
+                    signal: controller.signal,
+                    cache: 'no-cache'
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    showConnectionStatus('connected');
+                    return true;
+                }
+            } catch (error) {
+                console.log('Connection check failed:', error);
+            }
+            
+            showConnectionStatus('disconnected');
+            return false;
+        }
+        
+        function handleOnline() {
+            isOnline = true;
+            document.getElementById('offlineIndicator').style.display = 'none';
+            showConnectionStatus('connected');
+            console.log('Device is online');
+            
+            // Sync offline data if any
+            syncOfflineData();
+        }
+        
+        function handleOffline() {
+            isOnline = false;
+            document.getElementById('offlineIndicator').style.display = 'block';
+            showConnectionStatus('disconnected');
+            console.log('Device is offline');
+        }
+        
+        function updateOnlineStatus() {
+            isOnline = navigator.onLine;
+            if (!isOnline) {
+                handleOffline();
+            } else {
+                handleOnline();
+            }
+        }
+        
+        function showConnectionStatus(status) {
+            const element = document.getElementById('connectionStatus');
+            element.className = `connection-status ${status}`;
+            element.style.display = 'block';
+            
+            if (status === 'connected') {
+                element.innerHTML = '<i class="fas fa-wifi"></i> Connected';
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 3000);
+            } else {
+                element.innerHTML = '<i class="fas fa-wifi-slash"></i> Disconnected';
+            }
+        }
+        
+        // ============================
+        // OFFLINE DATA HANDLING
+        // ============================
+        function saveOfflineData(data) {
+            try {
+                const offlineData = JSON.parse(localStorage.getItem(CONFIG.OFFLINE_STORAGE_KEY) || '[]');
+                offlineData.push({
+                    ...data,
+                    timestamp: new Date().toISOString(),
+                    synced: false
+                });
+                localStorage.setItem(CONFIG.OFFLINE_STORAGE_KEY, JSON.stringify(offlineData));
+                return true;
+            } catch (error) {
+                console.error('Error saving offline data:', error);
+                return false;
+            }
+        }
+        
+        function checkOfflineData() {
+            try {
+                const offlineData = JSON.parse(localStorage.getItem(CONFIG.OFFLINE_STORAGE_KEY) || '[]');
+                if (offlineData.length > 0) {
+                    console.log(`Found ${offlineData.length} offline records`);
+                }
+            } catch (error) {
+                console.error('Error checking offline data:', error);
+            }
+        }
+        
+        async function syncOfflineData() {
+            if (!isOnline) return;
+            
+            try {
+                const offlineData = JSON.parse(localStorage.getItem(CONFIG.OFFLINE_STORAGE_KEY) || '[]');
+                const unsynced = offlineData.filter(item => !item.synced);
+                
+                if (unsynced.length === 0) return;
+                
+                console.log(`Syncing ${unsynced.length} offline records...`);
+                
+                for (const data of unsynced) {
+                    try {
+                        await submitToGoogleSheets(data, true);
+                        data.synced = true;
+                    } catch (error) {
+                        console.error('Failed to sync record:', error);
+                        break; // Stop syncing if one fails
+                    }
+                }
+                
+                // Update localStorage with synced status
+                localStorage.setItem(CONFIG.OFFLINE_STORAGE_KEY, JSON.stringify(offlineData));
+                
+                // Remove synced records
+                const remaining = offlineData.filter(item => !item.synced);
+                localStorage.setItem(CONFIG.OFFLINE_STORAGE_KEY, JSON.stringify(remaining));
+                
+                if (remaining.length === 0) {
+                    showStatus('success', 'All offline data synced successfully', 'attendanceStatus');
+                }
+                
+            } catch (error) {
+                console.error('Error syncing offline data:', error);
+            }
+        }
+        
+        // ============================
+        // ENHANCED API COMMUNICATION
+        // ============================
+        async function callGoogleScript(action, data = null, isRetry = false) {
+            if (!isOnline && action !== 'checkDuplicate') {
+                throw new Error('Device is offline. Data will be saved locally.');
+            }
+            
+            const url = getCurrentScriptUrl();
+            let formData = new URLSearchParams();
+            formData.append('action', action);
+            
+            if (data) {
+                for (const key in data) {
+                    if (data[key] !== null && data[key] !== undefined) {
+                        formData.append(key, data[key]);
+                    }
+                }
+            }
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), CONFIG.CONNECTION_TIMEOUT);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                // Reset retry count on success
+                retryCount = 0;
+                
+                return result;
+                
+            } catch (error) {
+                console.error(`API call failed for action ${action}:`, error);
+                
+                if (!isRetry && retryCount < CONFIG.MAX_RETRIES) {
+                    retryCount++;
+                    console.log(`Retrying... Attempt ${retryCount} of ${CONFIG.MAX_RETRIES}`);
+                    
+                    // Rotate to next script URL
+                    rotateScriptUrl();
+                    
+                    // Wait before retrying
+                    await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
+                    
+                    return callGoogleScript(action, data, true);
+                }
+                
+                throw error;
+            }
+        }
+        
+        // ============================
+        // ERROR HANDLING MODAL
+        // ============================
+        function showErrorModal(message, retryCallback = null) {
+            const modal = document.getElementById('errorModal');
+            const messageElement = document.getElementById('errorModalMessage');
+            const progress = document.getElementById('errorProgress');
+            const progressBar = document.getElementById('errorProgressBar');
+            
+            messageElement.textContent = message;
+            modal.style.display = 'flex';
+            progress.style.display = 'none';
+            progressBar.style.width = '0%';
+            
+            if (retryCallback) {
+                window.currentRetryCallback = retryCallback;
+            }
+        }
+        
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
+            window.currentRetryCallback = null;
+        }
+        
+        async function retryConnection() {
+            const progress = document.getElementById('errorProgress');
+            const progressBar = document.getElementById('errorProgressBar');
+            
+            progress.style.display = 'block';
+            
+            for (let i = 0; i <= 100; i += 10) {
+                progressBar.style.width = `${i}%`;
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            
+            if (window.currentRetryCallback) {
+                try {
+                    await window.currentRetryCallback();
+                    closeErrorModal();
+                } catch (error) {
+                    showErrorModal('Retry failed. Please check your connection.');
+                }
+            }
+        }
+        
+        // ============================
+        // UI FUNCTIONS
+        // ============================
+        function updateDateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-IN', { hour12: true });
+            document.getElementById('currentTime').textContent = timeStr;
+            document.getElementById('adminCurrentTime').textContent = timeStr;
+        }
+        
+        function selectRole(role) {
+            currentRole = role;
+            document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (role === 'user') {
+                document.getElementById('userLogin').style.display = 'block';
+                document.getElementById('adminLogin').style.display = 'none';
+            } else {
+                document.getElementById('userLogin').style.display = 'none';
+                document.getElementById('adminLogin').style.display = 'block';
+            }
+        }
+        
+        function showSystem(system) {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('userDashboard').style.display = 'none';
+            document.getElementById('adminDashboard').style.display = 'none';
+            document.getElementById(system).style.display = 'block';
+        }
+        
+        function showTab(tabName) {
+            // Update sidebar active state
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.parentElement.classList.add('active');
+            
+            // Show selected tab
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'dashboard') {
+                loadAdminData();
+            } else if (tabName === 'attendanceData') {
+                loadAttendanceTable();
+            } else if (tabName === 'trackerMap') {
+                initTrackerMap();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+        
+        function showStatus(type, message, elementId) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status-message ${type}`;
+            element.style.display = 'block';
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+        
+        function closeSuccessModal() {
+            document.getElementById('successModal').style.display = 'none';
+        }
+        
+        // ============================
+        // USER FUNCTIONS
+        // ============================
+        async function loginUser() {
+            const userId = document.getElementById('userID').value.trim();
+            if (!userId) {
+                alert('Please enter your Police ID');
+                return;
+            }
+            
+            try {
+                // Check for duplicate attendance in last hour
+                const result = await callGoogleScript('checkDuplicate', { policeId: userId });
+                
+                if (result.status === 'success' && result.data.isDuplicate) {
+                    const lastTime = new Date(result.data.lastTime).toLocaleTimeString();
+                    const nextTime = new Date(new Date(result.data.lastTime).getTime() + 60 * 60 * 1000).toLocaleTimeString();
+                    
+                    document.getElementById('warningMessage').textContent = 
+                        `ID ${userId} already marked attendance at ${lastTime}. Next eligible time: ${nextTime}`;
+                    document.getElementById('warningModal').style.display = 'flex';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking duplicate:', error);
+                // Continue even if check fails
+            }
+            
+            currentUser = userId;
+            localStorage.setItem('currentRole', 'user');
+            showSystem('userDashboard');
+            
+            // Try to auto-fill from Google Sheets
+            await checkAndFillPersonnelData(userId);
+        }
+        
+        async function checkAndFillPersonnelData(userId) {
+            try {
+                const result = await callGoogleScript('getPersonnel');
+                
+                if (result.status === 'success') {
+                    const personnel = result.data.personnel.find(p => p.id === userId);
+                    if (personnel) {
+                        document.getElementById('policeId').value = personnel.id;
+                        document.getElementById('rank').value = personnel.rank;
+                        document.getElementById('fullName').value = personnel.name;
+                        document.getElementById('policeStation').value = personnel.station;
+                        document.getElementById('sector').value = personnel.sector;
+                        document.getElementById('shift').value = personnel.shift;
+                        
+                        // Show last attendance info
+                        const lastAttendance = await getLastAttendance(userId);
+                        if (lastAttendance) {
+                            document.getElementById('lastAttendanceInfo').style.display = 'block';
+                            document.getElementById('lastAttendanceText').textContent = 
+                                `Last marked: ${new Date(lastAttendance.Timestamp).toLocaleString()}`;
+                            
+                            const nextEligible = new Date(new Date(lastAttendance.Timestamp).getTime() + 60 * 60 * 1000);
+                            document.getElementById('nextEligibleText').textContent = 
+                                `Next eligible: ${nextEligible.toLocaleTimeString()}`;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading personnel data:', error);
+            }
+        }
+        
+        async function getLastAttendance(policeId) {
+            try {
+                const result = await callGoogleScript('getAttendance', { policeId: policeId, limit: 1 });
+                
+                if (result.status === 'success' && result.data.attendance.length > 0) {
+                    return result.data.attendance[0];
+                }
+            } catch (error) {
+                console.error('Error getting last attendance:', error);
+            }
+            return null;
+        }
+        
+        // ============================
+        // ADMIN FUNCTIONS
+        // ============================
+        function loginAdmin() {
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (username === CONFIG.ADMIN_USERNAME && password === CONFIG.ADMIN_PASSWORD) {
+                currentRole = 'admin';
+                localStorage.setItem('currentRole', 'admin');
+                showSystem('adminDashboard');
+                loadAdminData();
+            } else {
+                alert('Invalid username or password!');
+            }
+        }
+        
+        function logout() {
+            currentUser = null;
+            currentRole = 'user';
+            localStorage.removeItem('currentRole');
+            showSystem('loginPage');
+            
+            // Reset forms
+            document.getElementById('userID').value = '';
+            document.getElementById('adminUsername').value = '';
+            document.getElementById('adminPassword').value = '';
+        }
+        
+        // ============================
+        // LOCATION FUNCTIONS
+        // ============================
+        function captureLocation() {
+            const btn = document.getElementById('captureLocationBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="loading"></span> Capturing location...';
+            btn.disabled = true;
+            
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+            
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            };
+            
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    // Success - play beep sound
+                    playBeepSound();
+                    
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    
+                    // Update form fields
+                    document.getElementById('latitude').value = userLocation.lat.toFixed(6);
+                    document.getElementById('longitude').value = userLocation.lng.toFixed(6);
+                    document.getElementById('accuracy').value = `${Math.round(userLocation.accuracy)} meters`;
+                    
+                    // Get address
+                    const address = await getAddressFromCoords(userLocation.lat, userLocation.lng);
+                    document.getElementById('address').value = address;
+                    
+                    // Show location info
+                    document.getElementById('locationInfo').style.display = 'grid';
+                    
+                    // Show map
+                    showUserMap(userLocation.lat, userLocation.lng);
+                    
+                    // Enable submit button
+                    document.getElementById('submitAttendanceBtn').disabled = false;
+                    
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Location Captured';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 2000);
+                },
+                (error) => {
+                    let errorMsg = 'Error getting location: ';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg += 'Permission denied. Please enable location services.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg += 'Location information is unavailable.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg += 'Location request timed out.';
+                            break;
+                        default:
+                            errorMsg += 'An unknown error occurred.';
+                            break;
+                    }
+                    
+                    alert(errorMsg);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                },
+                options
+            );
+        }
+        
+        function playBeepSound() {
+            try {
+                // Try Web Audio API first
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (error) {
+                // Fallback to HTML5 Audio
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ');
+                    audio.play();
+                } catch (e) {
+                    console.log('Audio playback not supported');
+                }
+            }
+        }
+        
+        async function getAddressFromCoords(lat, lng) {
+            if (!isOnline) {
+                return 'Address lookup requires internet connection';
+            }
+            
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`);
+                const data = await response.json();
+                return data.display_name || 'Address not found';
+            } catch (error) {
+                return 'Address lookup failed';
+            }
+        }
+        
+        function showUserMap(lat, lng) {
+            const mapContainer = document.getElementById('mapContainer');
+            mapContainer.style.display = 'block';
+            
+            if (!userMap) {
+                userMap = L.map('userMap').setView([lat, lng], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(userMap);
+            } else {
+                userMap.setView([lat, lng], 16);
+            }
+            
+            // Clear existing markers
+            userMap.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    userMap.removeLayer(layer);
+                }
+            });
+            
+            // Add marker
+            L.marker([lat, lng]).addTo(userMap)
+                .bindPopup('<b>Your Current Location</b><br>Attendance will be marked from this location')
+                .openPopup();
+                
+            // Add circle for accuracy
+            if (userLocation.accuracy) {
+                L.circle([lat, lng], {
+                    color: 'red',
+                    fillColor: '#f03',
+                    fillOpacity: 0.1,
+                    radius: userLocation.accuracy
+                }).addTo(userMap);
+            }
+        }
+        
+        // ============================
+        // ATTENDANCE SUBMISSION
+        // ============================
+        async function submitAttendance() {
+            // Get form values
+            const policeId = document.getElementById('policeId').value.trim();
+            const rank = document.getElementById('rank').value;
+            const fullName = document.getElementById('fullName').value.trim();
+            const policeStation = document.getElementById('policeStation').value;
+            const sector = document.getElementById('sector').value;
+            const shift = document.getElementById('shift').value;
+            
+            // Validation
+            if (!policeId || !rank || !fullName || !policeStation || !sector || !shift) {
+                showStatus('error', 'Please fill all required fields', 'attendanceStatus');
+                return;
+            }
+            
+            if (!userLocation) {
+                showStatus('error', 'Please capture your location first', 'attendanceStatus');
+                return;
+            }
+            
+            // Check for duplicate attendance in last hour
+            try {
+                const duplicateResult = await callGoogleScript('checkDuplicate', { policeId: policeId });
+                
+                if (duplicateResult.status === 'success' && duplicateResult.data.isDuplicate) {
+                    const lastTime = new Date(duplicateResult.data.lastTime).toLocaleTimeString();
+                    showStatus('error', `Attendance already marked at ${lastTime}. Please wait 1 hour.`, 'attendanceStatus');
+                    return;
+                }
+            } catch (error) {
+                // Continue even if duplicate check fails
+                console.error('Duplicate check failed:', error);
+            }
+            
+            const submitBtn = document.getElementById('submitAttendanceBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<span class="loading"></span> Saving...';
+            submitBtn.disabled = true;
+            
+            // Prepare attendance data
+            const attendanceData = {
+                policeId: policeId,
+                fullName: fullName,
+                rank: rank,
+                policeStation: policeStation,
+                sector: sector,
+                shift: shift,
+                latitude: userLocation.lat,
+                longitude: userLocation.lng,
+                address: document.getElementById('address').value,
+                accuracy: Math.round(userLocation.accuracy)
+            };
+            
+            try {
+                // Try to submit to Google Sheets
+                const result = await submitToGoogleSheets(attendanceData);
+                
+                if (result.status === 'success') {
+                    // Show success modal
+                    document.getElementById('successMessage').textContent = 
+                        `Attendance successfully recorded for ${fullName} (${policeId}) at ${policeStation}.`;
+                    document.getElementById('successModal').style.display = 'flex';
+                    
+                    // Reset form after delay
+                    setTimeout(() => {
+                        resetForm();
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        closeSuccessModal();
+                    }, 2000);
+                } else {
+                    showStatus('error', 'Error: ' + result.message, 'attendanceStatus');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('Submission error:', error);
+                
+                if (error.message.includes('offline')) {
+                    // Save offline
+                    const saved = saveOfflineData(attendanceData);
+                    if (saved) {
+                        document.getElementById('successMessage').textContent = 
+                            `Attendance saved offline for ${fullName}. It will sync when you're back online.`;
+                        document.getElementById('successModal').style.display = 'flex';
+                        
+                        setTimeout(() => {
+                            resetForm();
+                            submitBtn.innerHTML = originalText;
+                            submitBtn.disabled = false;
+                            closeSuccessModal();
+                        }, 2000);
+                    } else {
+                        showStatus('error', 'Failed to save attendance offline', 'attendanceStatus');
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                } else {
+                    showErrorModal(
+                        'Failed to save attendance. Please check your internet connection and try again.',
+                        () => submitToGoogleSheets(attendanceData)
+                    );
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }
+        }
+        
+        async function submitToGoogleSheets(data, isRetry = false) {
+            try {
+                const result = await callGoogleScript('submitAttendance', data, isRetry);
+                return result;
+            } catch (error) {
+                if (!isOnline) {
+                    throw new Error('Device is offline. Data will be saved locally.');
+                }
+                throw error;
+            }
+        }
+        
+        function resetForm() {
+            document.getElementById('policeId').value = '';
+            document.getElementById('rank').value = '';
+            document.getElementById('fullName').value = '';
+            document.getElementById('policeStation').value = '';
+            document.getElementById('sector').value = '';
+            document.getElementById('shift').value = '';
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+            document.getElementById('accuracy').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('locationInfo').style.display = 'none';
+            document.getElementById('mapContainer').style.display = 'none';
+            document.getElementById('submitAttendanceBtn').disabled = true;
+            document.getElementById('lastAttendanceInfo').style.display = 'none';
+            
+            if (userMap) {
+                userMap.remove();
+                userMap = null;
+            }
+        }
+        
+        // ============================
+        // ADMIN DATA FUNCTIONS
+        // ============================
+        async function loadAdminData() {
+            try {
+                // Load statistics
+                const statsResult = await callGoogleScript('getStats');
+                
+                if (statsResult.status === 'success') {
+                    document.getElementById('totalAttendance').textContent = statsResult.data.totalAttendance;
+                    document.getElementById('totalPersonnel').textContent = statsResult.data.totalPersonnel;
+                    document.getElementById('presentToday').textContent = statsResult.data.presentToday;
+                    document.getElementById('activeStations').textContent = statsResult.data.activeStations;
+                }
+                
+                // Load charts
+                loadDashboardCharts();
+                
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+                showStatus('error', 'Error loading data. Please check connection.', 'reportStatus');
+            }
+        }
+        
+        async function loadDashboardCharts() {
+            try {
+                const result = await callGoogleScript('getAttendance', { limit: 100 });
+                
+                if (result.status === 'success') {
+                    const attendanceData = result.data.attendance;
+                    
+                    // Prepare data for last 7 days
+                    const last7Days = [];
+                    const dayCounts = {};
+                    
+                    for (let i = 6; i >= 0; i--) {
+                        const date = new Date();
+                        date.setDate(date.getDate() - i);
+                        const dateStr = date.toLocaleDateString('en-IN', { weekday: 'short' });
+                        last7Days.push(dateStr);
+                        dayCounts[dateStr] = 0;
+                    }
+                    
+                    attendanceData.forEach(record => {
+                        const recordDate = new Date(record.Timestamp);
+                        const today = new Date();
+                        const sevenDaysAgo = new Date(today);
+                        sevenDaysAgo.setDate(today.getDate() - 7);
+                        
+                        if (recordDate >= sevenDaysAgo) {
+                            const dateStr = recordDate.toLocaleDateString('en-IN', { weekday: 'short' });
+                            if (dayCounts[dateStr] !== undefined) {
+                                dayCounts[dateStr]++;
+                            }
+                        }
+                    });
+                    
+                    const ctx = document.getElementById('attendanceChart').getContext('2d');
+                    
+                    if (attendanceChart) {
+                        attendanceChart.destroy();
+                    }
+                    
+                    attendanceChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: last7Days,
+                            datasets: [{
+                                label: 'Daily Attendance',
+                                data: last7Days.map(day => dayCounts[day] || 0),
+                                borderColor: '#FFD700',
+                                backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                                borderWidth: 3,
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(255,255,255,0.1)'
+                                    },
+                                    ticks: {
+                                        color: '#ccc'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        color: 'rgba(255,255,255,0.1)'
+                                    },
+                                    ticks: {
+                                        color: '#ccc'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#ccc'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading charts:', error);
+            }
+        }
+        
+        async function loadAttendanceTable() {
+            const tbody = document.getElementById('attendanceTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;"><span class="loading"></span> Loading...</td></tr>';
+            
+            try {
+                const result = await callGoogleScript('getAttendance', { limit: 50 });
+                
+                if (result.status === 'success') {
+                    tbody.innerHTML = '';
+                    
+                    if (result.data.attendance.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ccc;">No records found</td></tr>';
+                        return;
+                    }
+                    
+                    result.data.attendance.forEach(record => {
+                        const row = document.createElement('tr');
+                        const date = new Date(record.Timestamp);
+                        
+                        row.innerHTML = `
+                            <td>${date.toLocaleString('en-IN')}</td>
+                            <td><strong>${record['Police ID'] || 'N/A'}</strong></td>
+                            <td>${record.Name || 'N/A'}</td>
+                            <td><span style="color: var(--police-gold);">${record.Rank || 'N/A'}</span></td>
+                            <td>${record['Police Station'] || 'N/A'}</td>
+                            <td>${record.Sector || 'N/A'}</td>
+                            <td>${record.Shift || 'N/A'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading attendance table:', error);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ff6b6b;">Error loading data</td></tr>';
+            }
+        }
+        
+        async function filterRecords() {
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+            const station = document.getElementById('filterStation').value;
+            const sector = document.getElementById('filterSector').value;
+            const shift = document.getElementById('filterShift').value;
+            
+            const tbody = document.getElementById('attendanceTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;"><span class="loading"></span> Filtering...</td></tr>';
+            
+            try {
+                const params = {};
+                if (dateFrom) params.dateFrom = dateFrom;
+                if (dateTo) params.dateTo = dateTo;
+                if (station) params.station = station;
+                if (sector) params.sector = sector;
+                if (shift) params.shift = shift;
+                
+                const result = await callGoogleScript('getAttendance', params);
+                
+                if (result.status === 'success') {
+                    tbody.innerHTML = '';
+                    
+                    if (result.data.attendance.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ccc;">No matching records</td></tr>';
+                        return;
+                    }
+                    
+                    result.data.attendance.forEach(record => {
+                        const row = document.createElement('tr');
+                        const date = new Date(record.Timestamp);
+                        
+                        row.innerHTML = `
+                            <td>${date.toLocaleString('en-IN')}</td>
+                            <td><strong>${record['Police ID'] || 'N/A'}</strong></td>
+                            <td>${record.Name || 'N/A'}</td>
+                            <td><span style="color: var(--police-gold);">${record.Rank || 'N/A'}</span></td>
+                            <td>${record['Police Station'] || 'N/A'}</td>
+                            <td>${record.Sector || 'N/A'}</td>
+                            <td>${record.Shift || 'N/A'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error filtering records:', error);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #ff6b6b;">Error filtering data</td></tr>';
+            }
+        }
+        
+        async function exportFilteredData() {
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+            const station = document.getElementById('filterStation').value;
+            const sector = document.getElementById('filterSector').value;
+            const shift = document.getElementById('filterShift').value;
+            
+            try {
+                const params = {};
+                if (dateFrom) params.dateFrom = dateFrom;
+                if (dateTo) params.dateTo = dateTo;
+                if (station) params.station = station;
+                if (sector) params.sector = sector;
+                if (shift) params.shift = shift;
+                
+                const result = await callGoogleScript('exportData', params);
+                
+                if (result.status === 'success') {
+                    // Download CSV
+                    const blob = new Blob([result.data.csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    
+                    const fileName = `Police_Attendance_${dateFrom || 'All'}_${new Date().toISOString().slice(0,10)}.csv`;
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', fileName);
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    showStatus('success', 'Data exported successfully', 'reportStatus');
+                } else {
+                    showStatus('error', result.message, 'reportStatus');
+                }
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                showStatus('error', 'Error exporting data', 'reportStatus');
+            }
+        }
+        
+        async function addNewPersonnel() {
+            const id = document.getElementById('newPoliceId').value.trim();
+            const rank = document.getElementById('newRank').value;
+            const name = document.getElementById('newFullName').value.trim();
+            const station = document.getElementById('newPoliceStation').value;
+            const sector = document.getElementById('newSector').value;
+            const shift = document.getElementById('newShift').value;
+            
+            // Validation
+            if (!id || !rank || !name || !station || !sector || !shift) {
+                showStatus('error', 'Please fill all required fields', 'personnelStatus');
+                return;
+            }
+            
+            const addBtn = document.querySelector('#addPersonnel .submit-btn');
+            const originalText = addBtn.innerHTML;
+            
+            addBtn.innerHTML = '<span class="loading"></span> Adding...';
+            addBtn.disabled = true;
+            
+            try {
+                const data = {
+                    policeId: id,
+                    fullName: name,
+                    rank: rank,
+                    policeStation: station,
+                    sector: sector,
+                    shift: shift
+                };
+                
+                const result = await callGoogleScript('addPersonnel', data);
+                
+                if (result.status === 'success') {
+                    showStatus('success', 'Personnel added successfully', 'personnelStatus');
+                    
+                    // Reset form
+                    document.getElementById('newPoliceId').value = '';
+                    document.getElementById('newRank').value = '';
+                    document.getElementById('newFullName').value = '';
+                    document.getElementById('newPoliceStation').value = '';
+                    document.getElementById('newSector').value = '';
+                    document.getElementById('newShift').value = '';
+                    
+                } else {
+                    showStatus('error', 'Error: ' + result.message, 'personnelStatus');
+                }
+                
+            } catch (error) {
+                showStatus('error', 'Error adding personnel: ' + error.message, 'personnelStatus');
+            } finally {
+                addBtn.innerHTML = originalText;
+                addBtn.disabled = false;
+            }
+        }
+        
+        function initTrackerMap() {
+            // Implementation for tracker map
+            console.log('Tracker map initialization');
+        }
+        
+        function loadAnalytics() {
+            // Implementation for analytics
+            console.log('Analytics loading');
+        }
+        
+        // ============================
+        // SERVICE WORKER FOR PWA
+        // ============================
+        // Create a simple service worker for offline support
+        if ('serviceWorker' in navigator) {
+            const swContent = `
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open('police-attendance-v1').then(cache => {
+                            return cache.addAll([
+                                '/',
+                                '/index.html',
+                                '/manifest.json'
+                            ]);
+                        })
+                    );
+                });
+                
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request).then(response => {
+                            return response || fetch(event.request);
+                        })
+                    );
+                });
+            `;
+            
+            // Create a blob URL for the service worker
+            const blob = new Blob([swContent], { type: 'application/javascript' });
+            const swURL = URL.createObjectURL(blob);
+            
+            // Register the service worker
+            navigator.serviceWorker.register(swURL)
+                .then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+        }
+        
+        // ============================
+        // MANIFEST FOR PWA
+        // ============================
+        const manifest = {
+            "name": "Belagavi Police Attendance",
+            "short_name": "BPAS",
+            "description": "Belagavi Police Attendance System with Google Sheets Integration",
+            "start_url": "/",
+            "display": "standalone",
+            "background_color": "#1a1a1a",
+            "theme_color": "#8B0000",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%238B0000'/><path d='M50,20 L70,50 L60,50 L60,80 L40,80 L40,50 L30,50 Z' fill='%23FFD700'/></svg>",
+                    "sizes": "192x192",
+                    "type": "image/svg+xml"
+                }
+            ]
+        };
+        
+        // Create manifest element
+        const manifestEl = document.querySelector('link[rel="manifest"]');
+        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        manifestEl.href = manifestURL;
+        
+        console.log('Police Attendance System initialized successfully');
+        console.log('Platform:', navigator.platform);
+        console.log('User Agent:', navigator.userAgent);
+        console.log('Online:', navigator.onLine);
+    </script>
+</body>
+</html>
